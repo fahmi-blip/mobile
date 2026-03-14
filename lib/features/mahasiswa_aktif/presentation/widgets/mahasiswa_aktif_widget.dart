@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/core/constants/app_constants.dart';
 import 'package:flutter_application_1/features/mahasiswa_aktif/data/models/mahasiswa_aktif_model.dart';
 
 class ModernMahasiswaAktifCard extends StatefulWidget {
@@ -95,6 +96,13 @@ class _ModernMahasiswaAktifCardState extends State<ModernMahasiswaAktifCard>
                       colors: gradientColors,
                     ),
                     borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: gradientColors[0].withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Center(
                     child: Text(
@@ -108,6 +116,7 @@ class _ModernMahasiswaAktifCardState extends State<ModernMahasiswaAktifCard>
                   ),
                 ),
                 const SizedBox(width: 16),
+
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -117,6 +126,7 @@ class _ModernMahasiswaAktifCardState extends State<ModernMahasiswaAktifCard>
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
+                          letterSpacing: -0.3,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -177,35 +187,195 @@ class _ModernMahasiswaAktifCardState extends State<ModernMahasiswaAktifCard>
   }
 }
 
+class MahasiswaAktifCard extends StatelessWidget {
+  final MahasiswaAktifModel mahasiswa;
+  final VoidCallback? onTap;
+
+  const MahasiswaAktifCard({Key? key, required this.mahasiswa, this.onTap})
+    : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: AppConstants.paddingMedium),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 30,
+                backgroundColor: Theme.of(context).primaryColor,
+                child: Text(
+                  mahasiswa.nama.substring(0, 1).toUpperCase(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      mahasiswa.nama,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'ID: ${mahasiswa.nim}',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                    Text(
+                      mahasiswa.semester,
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                    ),
+                    Text(
+                      'Post ID ${mahasiswa.kelas}',
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 16,
+                color: Colors.grey[400],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class MahasiswaAktifEmptyState extends StatelessWidget {
+  final VoidCallback? onRefresh;
+
+  const MahasiswaAktifEmptyState({Key? key, this.onRefresh}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.school_outlined,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Tidak ada data mahasiswa',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[700],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Belum ada mahasiswa yang terdaftar',
+            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+          ),
+          if (onRefresh != null) ...[
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: onRefresh,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Refresh'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class MahasiswaAktifListView extends StatelessWidget {
   final List<MahasiswaAktifModel> mahasiswaAktifList;
   final Future<void> Function()? onRefresh;
+  final bool useModernCard;
 
   const MahasiswaAktifListView({
     Key? key,
     required this.mahasiswaAktifList,
     this.onRefresh,
+    this.useModernCard = true,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     if (mahasiswaAktifList.isEmpty) {
-      return const Center(child: Text('Data mahasiswa aktif tidak tersedia'));
+      return MahasiswaAktifEmptyState(
+        onRefresh: onRefresh == null ? null : () async => onRefresh!(),
+      );
     }
 
-    final listView = ListView.separated(
-      padding: const EdgeInsets.all(16),
-      itemCount: mahasiswaAktifList.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
-      itemBuilder: (context, index) {
-        return ModernMahasiswaAktifCard(mahasiswa: mahasiswaAktifList[index]);
-      },
+    return RefreshIndicator(
+      onRefresh: onRefresh ?? () async {},
+      child: ListView.builder(
+        padding: const EdgeInsets.all(AppConstants.paddingMedium),
+        itemCount: mahasiswaAktifList.length,
+        itemBuilder: (context, index) {
+          final mahasiswa = mahasiswaAktifList[index];
+          final gradientColors =
+              AppConstants.dashboardGradients[index %
+                  AppConstants.dashboardGradients.length];
+
+          if (useModernCard) {
+            return ModernMahasiswaAktifCard(
+              mahasiswa: mahasiswa,
+              gradientColors: gradientColors,
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Tapped ${mahasiswa.nama}'),
+                    behavior: SnackBarBehavior.floating,
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              },
+            );
+          }
+
+          return MahasiswaAktifCard(
+            mahasiswa: mahasiswa,
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Tapped ${mahasiswa.nama}')),
+              );
+            },
+          );
+        },
+      ),
     );
-
-    if (onRefresh != null) {
-      return RefreshIndicator(onRefresh: onRefresh!, child: listView);
-    }
-
-    return listView;
   }
 }

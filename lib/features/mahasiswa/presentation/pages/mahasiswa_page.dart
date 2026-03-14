@@ -10,16 +10,43 @@ class MahasiswaPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mahasiswaState = ref.watch(mahasiswaNotifierProvider);
+    final selectedClient = ref.watch(mahasiswaApiClientProvider);
+
+    String getClientLabel(MahasiswaApiClient client) {
+      switch (client) {
+        case MahasiswaApiClient.http:
+          return 'HTTP';
+        case MahasiswaApiClient.dio:
+          return 'DIO';
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Data Mahasiswa'),
+        title: Text('Data Mahasiswa (${getClientLabel(selectedClient)})'),
         elevation: 0,
         actions: [
+          PopupMenuButton<MahasiswaApiClient>(
+            tooltip: 'Pilih API Client',
+            icon: const Icon(Icons.sync_alt_rounded),
+            onSelected: (client) {
+              ref.read(mahasiswaNotifierProvider.notifier).setApiClient(client);
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: MahasiswaApiClient.http,
+                child: Text('Gunakan HTTP'),
+              ),
+              const PopupMenuItem(
+                value: MahasiswaApiClient.dio,
+                child: Text('Gunakan DIO'),
+              ),
+            ],
+          ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             onPressed: () {
-              ref.invalidate(mahasiswaNotifierProvider);
+              ref.read(mahasiswaNotifierProvider.notifier).refresh();
             },
             tooltip: 'Refresh',
           ),
@@ -36,7 +63,8 @@ class MahasiswaPage extends ConsumerWidget {
         data: (mahasiswaList) {
           return MahasiswaListView(
             mahasiswaList: mahasiswaList,
-            onRefresh: () async => ref.invalidate(mahasiswaNotifierProvider),
+            onRefresh: () async =>
+                ref.read(mahasiswaNotifierProvider.notifier).refresh(),
           );
         },
       ),

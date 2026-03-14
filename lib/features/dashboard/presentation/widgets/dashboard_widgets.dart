@@ -267,42 +267,43 @@ class _ModernStatCardState extends State<ModernStatCard>
               ), // Positioned
               // Content
               Padding(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     // Icon
                     Container(
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(12),
                       ), // BoxDecoration
-                      child: Icon(widget.icon, color: Colors.white, size: 24),
+                      child: Icon(widget.icon, color: Colors.white, size: 20),
                     ), // Container
-                    const Spacer(),
+                    const SizedBox(height: 8),
 
                     // Value
                     Text(
                       widget.stats.value,
                       style: const TextStyle(
-                        fontSize: 28,
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                         letterSpacing: -0.5,
                       ), // TextStyle
                     ), // Text
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
 
                     // Title
                     Text(
                       widget.stats.title,
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: 12,
                         color: Colors.white.withOpacity(0.9),
                         fontWeight: FontWeight.w500,
                       ), // TextStyle
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ), // Text
                   ],

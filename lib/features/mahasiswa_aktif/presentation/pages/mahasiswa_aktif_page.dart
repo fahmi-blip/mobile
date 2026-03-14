@@ -10,12 +10,39 @@ class MahasiswaAktifPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mahasiswaAktifState = ref.watch(mahasiswaAktifNotifierProvider);
+    final selectedClient = ref.watch(mahasiswaAktifApiClientProvider);
+
+    String getClientLabel(MahasiswaAktifApiClient client) {
+      switch (client) {
+        case MahasiswaAktifApiClient.http:
+          return 'HTTP';
+        case MahasiswaAktifApiClient.dio:
+          return 'DIO';
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mahasiswa Aktif'),
+        title:  Text('Mahasiswa Aktif (${getClientLabel(selectedClient)})'),
         elevation: 0,
         actions: [
+          PopupMenuButton<MahasiswaAktifApiClient>(
+            tooltip: 'Pilih API Client',
+            icon: const Icon(Icons.sync_alt_rounded),
+            onSelected: (client) {
+              ref.read(mahasiswaAktifNotifierProvider.notifier).setApiClient(client);
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: MahasiswaAktifApiClient.http,
+                child: Text('Gunakan HTTP'),
+              ),
+              const PopupMenuItem(
+                value: MahasiswaAktifApiClient.dio,
+                child: Text('Gunakan DIO'),
+              ),
+            ],
+          ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
             onPressed: () {
