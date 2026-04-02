@@ -101,9 +101,9 @@ class _ModernDosenCardState extends State<ModernDosenCard>
                         color: gradientColors[0].withOpacity(0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
-                      ), 
+                      ),
                     ],
-                  ), 
+                  ),
                   child: Center(
                     child: Text(
                       widget.dosen.name.substring(0, 1).toUpperCase(),
@@ -111,10 +111,10 @@ class _ModernDosenCardState extends State<ModernDosenCard>
                         color: Colors.white,
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                      ), 
-                    ), 
-                  ), 
-                ), 
+                      ),
+                    ),
+                  ),
+                ),
                 const SizedBox(width: 16),
 
                 // Dosen Information
@@ -141,13 +141,12 @@ class _ModernDosenCardState extends State<ModernDosenCard>
                       _buildInfoRow(Icons.email_outlined, widget.dosen.email),
                       const SizedBox(height: 4),
                       _buildInfoRow(
-                      Icons.location_on_outlined,
-                      '${widget.dosen.address.street}, ${widget.dosen.address.city}',
+                        Icons.location_on_outlined,
+                        '${widget.dosen.address.street}, ${widget.dosen.address.city}',
                       ),
                     ],
                   ), // Column
                 ), // Expanded
-                
                 // Arrow Icon
                 Container(
                   padding: const EdgeInsets.all(8),
@@ -191,7 +190,7 @@ class DosenCard extends StatelessWidget {
   final DosenModel dosen;
   final VoidCallback? onTap;
 
-  const DosenCard({Key? key, required this.dosen, this.onTap}) 
+  const DosenCard({Key? key, required this.dosen, this.onTap})
     : super(key: key);
 
   @override
@@ -233,26 +232,34 @@ class DosenCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '@{dosen.username}', 
-                      style: TextStyle(color: Colors.grey[600])
-                    ),
-                    Text(
-                      dosen.email, 
-                      style: TextStyle(fontSize: 13,color: Colors.grey[600])
-                    ),
-                    Text(
-                      '${dosen.address.street}, ${dosen.address.city}', 
-                      style: TextStyle(fontSize: 13,color: Colors.grey[600]),
+                      '@${dosen.username}',
+                      style: TextStyle(color: Colors.grey[600]),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                    )
+                    ),
+                    Text(
+                      dosen.email,
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      '${dosen.address.street}, ${dosen.address.city}',
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ],
                 ),
               ),
-              Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.grey[400]),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 16,
+                color: Colors.grey[400],
+              ),
             ],
           ),
-        )  
+        ),
       ),
     );
   }
@@ -277,14 +284,17 @@ class DosenEmptyState extends StatelessWidget {
             ),
             child: Icon(
               Icons.people_outline_rounded,
-              size:64,
+              size: 64,
               color: Colors.grey[400],
             ),
           ),
           const SizedBox(height: 24),
           Text(
             'Tidak ada data dosen',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.grey[700],
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[700],
             ),
           ),
           const SizedBox(height: 8),
@@ -300,7 +310,8 @@ class DosenEmptyState extends StatelessWidget {
               label: const Text('Refresh'),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 24, vertical: 12
+                  horizontal: 24,
+                  vertical: 12,
                 ),
               ),
             ),
@@ -330,15 +341,15 @@ class DosenListView extends StatelessWidget {
     }
 
     return RefreshIndicator(
-      onRefresh: () async => onRefresh(), 
+      onRefresh: () async => onRefresh(),
       child: ListView.builder(
         padding: const EdgeInsets.all(AppConstants.paddingMedium),
         itemCount: dosenList.length,
         itemBuilder: (context, index) {
           final dosen = dosenList[index];
-          final gradientColors = 
-            AppConstants.dashboardGradients[index %
-                AppConstants.dashboardGradients.length];
+          final gradientColors =
+              AppConstants.dashboardGradients[index %
+                  AppConstants.dashboardGradients.length];
 
           if (useModernCard) {
             return ModernDosenCard(
@@ -352,17 +363,15 @@ class DosenListView extends StatelessWidget {
                     duration: const Duration(seconds: 2),
                   ),
                 );
-              }
+              },
             );
           } else {
             return DosenCard(
               dosen: dosen,
               onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Tapped ${dosen.name}'),
-                  ),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text('Tapped ${dosen.name}')));
               },
             );
           }

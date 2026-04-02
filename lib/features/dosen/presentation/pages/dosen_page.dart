@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_application_1/core/widgets/common_widgets.dart';
+import 'package:flutter_application_1/features/dosen/data/models/dosen_model.dart';
 import 'package:flutter_application_1/features/dosen/presentation/providers/dosen_provider.dart';
-import 'package:flutter_application_1/features/dosen/presentation/widgets/dosen_widget.dart';
 
 class DosenPage extends ConsumerWidget {
   const DosenPage({super.key});
@@ -10,6 +10,7 @@ class DosenPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dosenState = ref.watch(dosenNotifierProvider);
+    final savedUsers = ref.watch(savedUsersProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -25,23 +26,268 @@ class DosenPage extends ConsumerWidget {
           ), // IconButton
         ],
       ), // AppBar
-      body: dosenState.when(
-        // State: Loading
-        loading: () => const LoadingWidget(),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section: data tersimpan di sharedpreferences
+          _SavedUserSection(savedUsers: savedUsers, ref: ref),
 
-        // State: Error
-        error: (error, stack) => CustomErrorWidget(
-          message: 'Gagal memuat data dosen: ${error.toString()}',
-          onRetry: () {
-            ref.read(dosenNotifierProvider.notifier).refresh();
-          },
-        ), // CustomErrorWidget
-        // State: memanggil data dosen dari dosen list dan memanggil widget
-        data: (dosenList) {
-          return DosenListView(
-            dosenList: dosenList,
-            onRefresh: () async => ref.invalidate(dosenNotifierProvider),
-            useModernCard: true,
+          // section title: daftar dosen
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: Text(
+              'Daftar Dosen',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            ),
+          ), // Padding
+          // Dosen list
+          Expanded(
+            child: dosenState.when(
+              loading: () => LoadingWidget(),
+              error: (error, stack) => CustomErrorWidget(
+                message: 'Gagal memuat data dosen: ${error.toString()}',
+                onRetry: () {
+                  ref.read(dosenNotifierProvider.notifier).refresh();
+                },
+              ),
+              data: (dosenList) => _DosenListWithSave(
+                dosenList: dosenList,
+                onRefresh: () => ref.invalidate(dosenNotifierProvider),
+              ),
+            ),
+          ), // Expanded
+        ],
+      ), // Column
+    );
+  }
+}
+
+// widget: section data sharedpreferences
+class _SavedUserSection extends ConsumerWidget {
+  final AsyncValue<List<Map<String, String>>> savedUsers;
+  final WidgetRef ref;
+
+  const _SavedUserSection({required this.savedUsers, required this.ref});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header dengan tombol hapus semua
+          Row(
+            children: [
+              const Icon(Icons.storage_rounded, size: 16),
+              const SizedBox(width: 6),
+              const Text(
+                'Data Tersimpan di Local Storage',
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+              ), // Text
+              const Spacer(),
+              savedUsers.maybeWhen(
+                data: (users) => users.isNotEmpty
+                    ? TextButton.icon(
+                        onPressed: () async {
+                          await ref
+                              .read(dosenNotifierProvider.notifier)
+                              .clearSavedUsers();
+                          ref.invalidate(savedUsersProvider);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Semua data tersimpan berhasil dihapus',
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        icon: const Icon(
+                          Icons.delete_sweep_outlined,
+                          size: 12,
+                          color: Colors.red,
+                        ),
+                        label: const Text(
+                          'Hapus Semua',
+                          style: TextStyle(fontSize: 10, color: Colors.red),
+                        ),
+                      )
+                    : SizedBox.shrink(),
+                orElse: () => const SizedBox.shrink(),
+              ),
+            ],
+          ), // Row
+          const SizedBox(height: 8),
+
+          //content
+          savedUsers.when(
+            loading: () => const LinearProgressIndicator(),
+            error: (_, __) => const Text(
+              'Gagal memuat data tersimpan',
+              style: TextStyle(fontSize: 12, color: Colors.red),
+            ),
+            data: (users) {
+              if (users.isEmpty) {
+                return Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        size: 16,
+                        color: Colors.grey.shade400,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Belum ada data tersimpan.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade500,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return Container(
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.green.shade200),
+                ),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount: users.length,
+                  separatorBuilder: (_, __) => Divider(
+                    height: 1,
+                    color: Colors.green.shade100,
+                    indent: 12,
+                    endIndent: 12,
+                  ),
+                  itemBuilder: (context, index) {
+                    final user = users[index];
+                    return ListTile(
+                      dense: true,
+                      leading: CircleAvatar(
+                        radius: 14,
+                        backgroundColor: Colors.green.shade100,
+                        child: Text(
+                          '${index + 1}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.green.shade700,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      title: Text(user['username'] ?? '-'),
+                      subtitle: Text(
+                        'ID: ${user['user_id']} • ${_formatDate(user['saved_at'] ?? '')}',
+                        style: const TextStyle(fontSize: 11),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(
+                          Icons.close,
+                          size: 16,
+                          color: Colors.red,
+                        ),
+                        onPressed: () async {
+                          await ref
+                              .read(dosenNotifierProvider.notifier)
+                              .removeSavedUser(user['user_id'] ?? '');
+                          ref.invalidate(savedUsersProvider);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('${user['username']} dihapus'),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(String isoString) {
+    if (isoString.isEmpty) return '-';
+    try {
+      final dateTime = DateTime.parse(isoString);
+      return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute}';
+    } catch (e) {
+      return isoString;
+    }
+  }
+}
+
+// - Widget: List dosen dengan tombol save
+class _DosenListWithSave extends ConsumerWidget {
+  final List<DosenModel> dosenList;
+  final VoidCallback onRefresh;
+
+  const _DosenListWithSave({required this.dosenList, required this.onRefresh});
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return RefreshIndicator(
+      onRefresh: () async => onRefresh(),
+      child: ListView.builder(
+        itemCount: dosenList.length,
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        itemBuilder: (context, index) {
+          final dosen = dosenList[index];
+          return Card(
+            margin: const EdgeInsets.symmetric(vertical: 6),
+            child: ListTile(
+              leading: CircleAvatar(child: Text('${dosen.id}')),
+              title: Text(dosen.name),
+              subtitle: Text(
+                '${dosen.username} ${dosen.email}\n${dosen.address.city}',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              // Text
+              isThreeLine: true,
+              trailing: IconButton(
+                icon: const Icon(Icons.save, size: 18),
+                tooltip: 'Simpan user ini',
+                onPressed: () async {
+                  await ref
+                      .read(dosenNotifierProvider.notifier)
+                      .saveSelectedDosen(dosen);
+                  ref.invalidate(savedUsersProvider);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          '${dosen.username} berhasil disimpan ke local storage',
+                        ),
+                      ),
+                    );
+                  }
+                },
+              ),
+            ),
           );
         },
       ),

@@ -1,8 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_application_1/core/services/local_storage_service.dart';
 import 'package:flutter_application_1/features/mahasiswa_aktif/data/models/mahasiswa_aktif_model.dart';
 import 'package:flutter_application_1/features/mahasiswa_aktif/data/repositories/mahasiswa_aktif_repository.dart';
-
-enum MahasiswaAktifApiClient { http, dio }
 
 final mahasiswaAktifRepositoryProvider = Provider<MahasiswaAktifRepository>((
   ref,
@@ -10,16 +9,34 @@ final mahasiswaAktifRepositoryProvider = Provider<MahasiswaAktifRepository>((
   return MahasiswaAktifRepository();
 });
 
-final mahasiswaAktifApiClientProvider = StateProvider<MahasiswaAktifApiClient>(
-  (ref) => MahasiswaAktifApiClient.http,
+final mahasiswaAktifLocalStorageServiceProvider = Provider<LocalStorageService>(
+  (ref) {
+    return LocalStorageService();
+  },
 );
+
+final mahasiswaAktifSavedUsersProvider =
+    FutureProvider<List<Map<String, String>>>((ref) async {
+      final storage = ref.watch(mahasiswaAktifLocalStorageServiceProvider);
+      return storage.getSavedUsers();
+    });
+
+final mahasiswaAktifSavedUserProvider = FutureProvider<Map<String, String?>>((
+  ref,
+) async {
+  final storage = ref.watch(mahasiswaAktifLocalStorageServiceProvider);
+  final userId = await storage.getUserId();
+  final username = await storage.getUsername();
+  final token = await storage.getToken();
+  return {'userId': userId, 'username': username, 'token': token};
+});
 
 class MahasiswaAktifNotifier
     extends StateNotifier<AsyncValue<List<MahasiswaAktifModel>>> {
   final MahasiswaAktifRepository _repository;
-  final Ref _ref;
+  final LocalStorageService _storage;
 
-  MahasiswaAktifNotifier(this._repository, this._ref)
+  MahasiswaAktifNotifier(this._repository, this._storage)
     : super(const AsyncValue.loading()) {
     loadMahasiswaAktifList();
   }
@@ -27,10 +44,7 @@ class MahasiswaAktifNotifier
   Future<void> loadMahasiswaAktifList() async {
     state = const AsyncValue.loading();
     try {
-      final selectedClient = _ref.read(mahasiswaAktifApiClientProvider);
-      final data = await _repository.getMahasiswaAktifList(
-        useDio: selectedClient == MahasiswaAktifApiClient.dio,
-      );
+      final data = await _repository.getMahasiswaAktifList();
       state = AsyncValue.data(data);
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
@@ -41,9 +55,19 @@ class MahasiswaAktifNotifier
     await loadMahasiswaAktifList();
   }
 
-  Future<void> setApiClient(MahasiswaAktifApiClient apiClient) async {
-    _ref.read(mahasiswaAktifApiClientProvider.notifier).state = apiClient;
-    await loadMahasiswaAktifList();
+  Future<void> saveSelectedMahasiswa(MahasiswaAktifModel mahasiswa) async {
+    await _storage.addUserToSavedList(
+      userId: mahasiswa.nim,
+      username: mahasiswa.nama,
+    );
+  }
+
+  Future<void> removeSavedUser(String userId) async {
+    await _storage.removeSavedUser(userId);
+  }
+
+  Future<void> clearSavedUsers() async {
+    await _storage.clearSavedUsers();
   }
 }
 
@@ -53,5 +77,6 @@ final mahasiswaAktifNotifierProvider =
       AsyncValue<List<MahasiswaAktifModel>>
     >((ref) {
       final repository = ref.watch(mahasiswaAktifRepositoryProvider);
-      return MahasiswaAktifNotifier(repository, ref);
+      final storage = ref.watch(mahasiswaAktifLocalStorageServiceProvider);
+      return MahasiswaAktifNotifier(repository, storage);
     });

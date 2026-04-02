@@ -5,12 +5,14 @@ import 'package:flutter_application_1/features/mahasiswa_aktif/data/models/mahas
 class ModernMahasiswaAktifCard extends StatefulWidget {
   final MahasiswaAktifModel mahasiswa;
   final VoidCallback? onTap;
+  final VoidCallback? onSave;
   final List<Color>? gradientColors;
 
   const ModernMahasiswaAktifCard({
     Key? key,
     required this.mahasiswa,
     this.onTap,
+    this.onSave,
     this.gradientColors,
   }) : super(key: key);
 
@@ -149,17 +151,31 @@ class _ModernMahasiswaAktifCardState extends State<ModernMahasiswaAktifCard>
                     ],
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: gradientColors[0].withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 16,
-                    color: gradientColors[0],
-                  ),
+                Column(
+                  children: [
+                    if (widget.onSave != null)
+                      IconButton(
+                        icon: Icon(
+                          Icons.save_rounded,
+                          color: gradientColors[0],
+                        ),
+                        iconSize: 20,
+                        tooltip: 'Simpan mahasiswa ini',
+                        onPressed: widget.onSave,
+                      ),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: gradientColors[0].withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 16,
+                        color: gradientColors[0],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -190,9 +206,14 @@ class _ModernMahasiswaAktifCardState extends State<ModernMahasiswaAktifCard>
 class MahasiswaAktifCard extends StatelessWidget {
   final MahasiswaAktifModel mahasiswa;
   final VoidCallback? onTap;
+  final VoidCallback? onSave;
 
-  const MahasiswaAktifCard({Key? key, required this.mahasiswa, this.onTap})
-    : super(key: key);
+  const MahasiswaAktifCard({
+    Key? key,
+    required this.mahasiswa,
+    this.onTap,
+    this.onSave,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -230,18 +251,24 @@ class MahasiswaAktifCard extends StatelessWidget {
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'ID: ${mahasiswa.nim}',
                       style: TextStyle(color: Colors.grey[600]),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     Text(
-                      mahasiswa.semester,
+                      'Semester ${mahasiswa.semester}',
                       style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     Text(
-                      'Post ID ${mahasiswa.kelas}',
+                      'Kelas ${mahasiswa.kelas}',
                       style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -249,10 +276,21 @@ class MahasiswaAktifCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 16,
-                color: Colors.grey[400],
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (onSave != null)
+                    IconButton(
+                      icon: const Icon(Icons.save_rounded, size: 20),
+                      tooltip: 'Simpan mahasiswa ini',
+                      onPressed: onSave,
+                    ),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 16,
+                    color: Colors.grey[400],
+                  ),
+                ],
               ),
             ],
           ),
@@ -322,12 +360,14 @@ class MahasiswaAktifEmptyState extends StatelessWidget {
 class MahasiswaAktifListView extends StatelessWidget {
   final List<MahasiswaAktifModel> mahasiswaAktifList;
   final Future<void> Function()? onRefresh;
+  final void Function(MahasiswaAktifModel mahasiswa)? onSave;
   final bool useModernCard;
 
   const MahasiswaAktifListView({
     Key? key,
     required this.mahasiswaAktifList,
     this.onRefresh,
+    this.onSave,
     this.useModernCard = true,
   }) : super(key: key);
 
@@ -354,6 +394,7 @@ class MahasiswaAktifListView extends StatelessWidget {
             return ModernMahasiswaAktifCard(
               mahasiswa: mahasiswa,
               gradientColors: gradientColors,
+              onSave: onSave == null ? null : () => onSave!(mahasiswa),
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -368,6 +409,7 @@ class MahasiswaAktifListView extends StatelessWidget {
 
           return MahasiswaAktifCard(
             mahasiswa: mahasiswa,
+            onSave: onSave == null ? null : () => onSave!(mahasiswa),
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Tapped ${mahasiswa.nama}')),
